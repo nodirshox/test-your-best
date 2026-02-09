@@ -18,34 +18,34 @@ const WalletCard = ({ wallet, isSelected, onSelect }: WalletCardProps) => {
   return (
     <button
       onClick={() => onSelect(wallet.id)}
-      className={`group relative flex min-w-[160px] shrink-0 flex-col gap-3 rounded-2xl p-4 transition-all duration-200 active:scale-[0.97] ${
+      className={`group relative flex min-w-[170px] shrink-0 flex-col gap-3 rounded-2xl p-4 transition-all duration-200 active:scale-[0.97] ${
         isSelected
-          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-          : 'bg-card text-card-foreground border border-border hover:border-primary/30'
+          ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20'
+          : 'bg-card text-card-foreground border border-border shadow-sm hover:shadow-md hover:border-primary/20'
       }`}
     >
       {/* Icon row */}
       <div className="flex items-center justify-between">
-        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-          isSelected ? 'bg-primary-foreground/20' : 'bg-muted'
+        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+          isSelected ? 'bg-primary-foreground/15' : 'bg-primary/8'
         }`}>
-          <WalletIcon className="h-4 w-4" />
+          <WalletIcon className={`h-4 w-4 ${isSelected ? '' : 'text-primary'}`} />
         </div>
         {wallet.isDefault && (
-          <Star className={`h-3.5 w-3.5 ${isSelected ? 'fill-primary-foreground/60 text-primary-foreground/60' : 'fill-exchange text-exchange'}`} />
+          <Star className={`h-3.5 w-3.5 ${isSelected ? 'fill-primary-foreground/50 text-primary-foreground/50' : 'fill-exchange text-exchange'}`} />
         )}
       </div>
 
       {/* Name */}
-      <span className={`text-xs font-medium truncate ${isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+      <span className={`text-xs font-semibold truncate ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
         {wallet.name}
       </span>
 
       {/* Balance */}
-      <span className={`text-lg font-bold tabular-nums tracking-tight ${
+      <span className={`text-lg font-extrabold tabular-nums tracking-tight ${
         isSelected
           ? 'text-primary-foreground'
-          : isNegative ? 'amount-expense' : 'text-card-foreground'
+          : isNegative ? 'text-expense' : 'text-foreground'
       }`}>
         {isNegative ? '-' : ''}{symbol}{formatted}
       </span>

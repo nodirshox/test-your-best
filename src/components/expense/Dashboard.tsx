@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { mockWallets, mockTransactions } from '@/data/mockData';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, TrendingUp, TrendingDown, ArrowLeftRight } from 'lucide-react';
 import WalletCard from './WalletCard';
 import TransactionItem from './TransactionItem';
 
@@ -34,13 +34,21 @@ const Dashboard = () => {
 
   // Total balance
   const totalBalance = mockWallets.reduce((sum, w) => {
-    if (w.currency === 'EUR') return sum + w.balance * 1.08; // rough conversion
+    if (w.currency === 'EUR') return sum + w.balance * 1.08;
     return sum + w.balance;
   }, 0);
   const totalFormatted = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(totalBalance);
+
+  // Quick stats
+  const totalIncome = mockTransactions
+    .filter((t) => t.type === 'income')
+    .reduce((s, t) => s + t.amount, 0);
+  const totalExpense = mockTransactions
+    .filter((t) => t.type === 'expense')
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
 
   const filtered = selectedWallet
     ? mockTransactions.filter((t) => t.walletId === selectedWallet)
@@ -55,16 +63,37 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-10">
-      {/* Hero / Total Balance */}
-      <div className="px-5 pt-8 pb-2">
-        <p className="text-xs font-medium text-muted-foreground mb-1">Total Balance</p>
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
-          ${totalFormatted}
-        </h1>
+      {/* Hero */}
+      <div className="relative overflow-hidden px-5 pt-10 pb-6">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/5" />
+        <div className="relative">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+            Total Balance
+          </p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-foreground tabular-nums">
+            ${totalFormatted}
+          </h1>
+
+          {/* Quick stat pills */}
+          <div className="mt-4 flex gap-2">
+            <div className="flex items-center gap-1.5 rounded-full bg-income-light px-3 py-1.5">
+              <TrendingUp className="h-3.5 w-3.5 text-income" />
+              <span className="text-xs font-semibold text-income">
+                +${new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 }).format(totalIncome)}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full bg-expense-light px-3 py-1.5">
+              <TrendingDown className="h-3.5 w-3.5 text-expense" />
+              <span className="text-xs font-semibold text-expense">
+                -${new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 }).format(totalExpense)}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Wallet cards — horizontal scroll */}
-      <section className="mt-4 mb-6">
+      {/* Wallet cards */}
+      <section className="mb-6">
         <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-none">
           {mockWallets.map((w) => (
             <WalletCard
@@ -83,11 +112,13 @@ const Dashboard = () => {
       {/* Transactions */}
       <section className="px-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-foreground">Transactions</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            Transactions
+          </h2>
           {selectedWallet && (
             <button
               onClick={() => { setSelectedWallet(null); setVisibleCount(8); }}
-              className="flex items-center gap-1 rounded-lg bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+              className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary/20"
             >
               Clear filter ×
             </button>
@@ -96,7 +127,9 @@ const Dashboard = () => {
 
         {visible.length === 0 ? (
           <div className="flex flex-col items-center py-16 animate-fade-in">
-            <span className="text-5xl mb-4">📭</span>
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+              <ArrowLeftRight className="h-7 w-7 text-muted-foreground" />
+            </div>
             <p className="text-sm font-semibold text-foreground mb-1">No transactions yet</p>
             <p className="text-xs text-muted-foreground text-center max-w-[260px] leading-relaxed">
               Send a voice message to the bot to record your first expense!
@@ -106,10 +139,10 @@ const Dashboard = () => {
           <div className="flex flex-col gap-5">
             {grouped.map((group) => (
               <div key={group.label}>
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
                   {group.label}
                 </p>
-                <div className="rounded-2xl bg-card border border-border px-4 divide-y divide-border">
+                <div className="rounded-2xl bg-card border border-border shadow-sm px-4 divide-y divide-border/60">
                   {group.items.map((t) => {
                     const idx = globalIndex++;
                     return <TransactionItem key={t.id} transaction={t} index={idx} />;
@@ -123,7 +156,7 @@ const Dashboard = () => {
         {hasMore && (
           <button
             onClick={() => setVisibleCount((c) => c + 8)}
-            className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-muted py-3.5 text-sm font-semibold text-muted-foreground transition-all hover:text-foreground active:scale-[0.99]"
+            className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-border bg-card py-3.5 text-sm font-semibold text-muted-foreground shadow-sm transition-all hover:text-foreground hover:border-primary/30 active:scale-[0.99]"
           >
             Load More
             <ChevronDown className="h-4 w-4" />
