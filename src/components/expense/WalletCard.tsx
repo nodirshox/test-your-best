@@ -1,38 +1,55 @@
 import type { Wallet } from '@/types/expense';
+import { Wallet as WalletIcon, Star } from 'lucide-react';
 
 interface WalletCardProps {
   wallet: Wallet;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
 }
 
-const WalletCard = ({ wallet }: WalletCardProps) => {
+const WalletCard = ({ wallet, isSelected, onSelect }: WalletCardProps) => {
   const isNegative = wallet.balance < 0;
   const formatted = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(wallet.balance));
+  const symbol = wallet.currency === 'EUR' ? '€' : '$';
 
   return (
-    <div
-      className={`rounded-2xl border px-4 py-3 transition-all ${
-        wallet.isDefault
-          ? 'border-primary/20 bg-primary/[0.04] shadow-sm'
-          : 'border-border bg-card'
+    <button
+      onClick={() => onSelect(wallet.id)}
+      className={`group relative flex min-w-[160px] shrink-0 flex-col gap-3 rounded-2xl p-4 transition-all duration-200 active:scale-[0.97] ${
+        isSelected
+          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+          : 'bg-card text-card-foreground border border-border hover:border-primary/30'
       }`}
     >
+      {/* Icon row */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="truncate text-sm font-medium text-card-foreground">{wallet.name}</span>
-          {wallet.isDefault && (
-            <span className="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-              Default
-            </span>
-          )}
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+          isSelected ? 'bg-primary-foreground/20' : 'bg-muted'
+        }`}>
+          <WalletIcon className="h-4 w-4" />
         </div>
-        <span className={`shrink-0 text-sm font-bold tabular-nums ${isNegative ? 'amount-expense' : 'amount-income'}`}>
-          {isNegative ? '-' : ''}{wallet.currency === 'EUR' ? '€' : '$'}{formatted}
-        </span>
+        {wallet.isDefault && (
+          <Star className={`h-3.5 w-3.5 ${isSelected ? 'fill-primary-foreground/60 text-primary-foreground/60' : 'fill-exchange text-exchange'}`} />
+        )}
       </div>
-    </div>
+
+      {/* Name */}
+      <span className={`text-xs font-medium truncate ${isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+        {wallet.name}
+      </span>
+
+      {/* Balance */}
+      <span className={`text-lg font-bold tabular-nums tracking-tight ${
+        isSelected
+          ? 'text-primary-foreground'
+          : isNegative ? 'amount-expense' : 'text-card-foreground'
+      }`}>
+        {isNegative ? '-' : ''}{symbol}{formatted}
+      </span>
+    </button>
   );
 };
 

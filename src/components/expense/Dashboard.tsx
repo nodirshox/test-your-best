@@ -1,75 +1,132 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { mockWallets, mockTransactions } from '@/data/mockData';
+import { ChevronDown } from 'lucide-react';
 import WalletCard from './WalletCard';
 import TransactionItem from './TransactionItem';
 
-const Dashboard = () => {
-  const [walletFilter, setWalletFilter] = useState('all');
-  const [visibleCount, setVisibleCount] = useState(5);
+/** Group transactions by date label */
+const groupByDate = (txs: typeof mockTransactions) => {
+  const groups: { label: string; items: typeof mockTransactions }[] = [];
+  const map = new Map<string, typeof mockTransactions>();
 
-  const filtered = walletFilter === 'all'
-    ? mockTransactions
-    : mockTransactions.filter((t) => t.walletId === walletFilter);
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  for (const t of txs) {
+    let label: string;
+    if (t.date === today) label = 'Today';
+    else if (t.date === yesterday) label = 'Yesterday';
+    else label = new Date(t.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+    if (!map.has(label)) {
+      map.set(label, []);
+    }
+    map.get(label)!.push(t);
+  }
+
+  map.forEach((items, label) => groups.push({ label, items }));
+  return groups;
+};
+
+const Dashboard = () => {
+  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(8);
+
+  // Total balance
+  const totalBalance = mockWallets.reduce((sum, w) => {
+    if (w.currency === 'EUR') return sum + w.balance * 1.08; // rough conversion
+    return sum + w.balance;
+  }, 0);
+  const totalFormatted = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(totalBalance);
+
+  const filtered = selectedWallet
+    ? mockTransactions.filter((t) => t.walletId === selectedWallet)
+    : mockTransactions;
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
 
+  const grouped = useMemo(() => groupByDate(visible), [visible]);
+
+  let globalIndex = 0;
+
   return (
-    <div className="min-h-screen bg-background pb-8">
-      {/* Header */}
-      <div className="px-5 pt-6 pb-4">
-        <h1 className="text-lg font-bold text-foreground">Expense Tracker</h1>
-        <p className="text-xs text-muted-foreground">Track your spending with voice messages</p>
+    <div className="min-h-screen bg-background pb-10">
+      {/* Hero / Total Balance */}
+      <div className="px-5 pt-8 pb-2">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Total Balance</p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
+          ${totalFormatted}
+        </h1>
       </div>
 
-      {/* Wallets */}
-      <section className="px-5 mb-6">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Wallets</h2>
-        <div className="flex flex-col gap-2">
+      {/* Wallet cards — horizontal scroll */}
+      <section className="mt-4 mb-6">
+        <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-none">
           {mockWallets.map((w) => (
-            <WalletCard key={w.id} wallet={w} />
+            <WalletCard
+              key={w.id}
+              wallet={w}
+              isSelected={selectedWallet === w.id}
+              onSelect={(id) => {
+                setSelectedWallet((prev) => (prev === id ? null : id));
+                setVisibleCount(8);
+              }}
+            />
           ))}
         </div>
       </section>
 
       {/* Transactions */}
       <section className="px-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Transactions</h2>
-          <select
-            value={walletFilter}
-            onChange={(e) => { setWalletFilter(e.target.value); setVisibleCount(5); }}
-            className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-card-foreground outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="all">All Wallets</option>
-            {mockWallets.map((w) => (
-              <option key={w.id} value={w.id}>{w.name}</option>
-            ))}
-          </select>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground">Transactions</h2>
+          {selectedWallet && (
+            <button
+              onClick={() => { setSelectedWallet(null); setVisibleCount(8); }}
+              className="flex items-center gap-1 rounded-lg bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+            >
+              Clear filter ×
+            </button>
+          )}
         </div>
 
         {visible.length === 0 ? (
-          <div className="flex flex-col items-center py-12 animate-fade-in">
-            <span className="text-4xl mb-3">📭</span>
-            <p className="text-sm font-medium text-foreground mb-1">No transactions yet</p>
-            <p className="text-xs text-muted-foreground text-center max-w-[240px]">
-              Close this page and send a voice message to the bot to create your first transaction!
+          <div className="flex flex-col items-center py-16 animate-fade-in">
+            <span className="text-5xl mb-4">📭</span>
+            <p className="text-sm font-semibold text-foreground mb-1">No transactions yet</p>
+            <p className="text-xs text-muted-foreground text-center max-w-[260px] leading-relaxed">
+              Send a voice message to the bot to record your first expense!
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            {visible.map((t, i) => (
-              <TransactionItem key={t.id} transaction={t} index={i} />
+          <div className="flex flex-col gap-5">
+            {grouped.map((group) => (
+              <div key={group.label}>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {group.label}
+                </p>
+                <div className="rounded-2xl bg-card border border-border px-4 divide-y divide-border">
+                  {group.items.map((t) => {
+                    const idx = globalIndex++;
+                    return <TransactionItem key={t.id} transaction={t} index={idx} />;
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         )}
 
         {hasMore && (
           <button
-            onClick={() => setVisibleCount((c) => c + 5)}
-            className="mt-4 w-full rounded-xl border border-border bg-card py-3 text-sm font-medium text-primary transition-all hover:bg-primary/5 active:scale-[0.99]"
+            onClick={() => setVisibleCount((c) => c + 8)}
+            className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-muted py-3.5 text-sm font-semibold text-muted-foreground transition-all hover:text-foreground active:scale-[0.99]"
           >
             Load More
+            <ChevronDown className="h-4 w-4" />
           </button>
         )}
       </section>
