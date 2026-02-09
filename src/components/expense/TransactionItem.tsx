@@ -5,17 +5,17 @@ interface TransactionItemProps {
   index: number;
 }
 
-const categoryIcon: Record<string, string> = {
-  '🛒 Groceries': '🛒',
-  '💰 Salary': '💰',
-  '🚕 Transport': '🚕',
-  '🎬 Entertainment': '🎬',
-  '💼 Freelance': '💼',
-  '🍽️ Food': '🍽️',
-  '💱 Exchange': '💱',
-  '✈️ Travel': '✈️',
-  '☕ Coffee': '☕',
-  '🏋️ Health': '🏋️',
+const categoryConfig: Record<string, { icon: string; bg: string }> = {
+  '🛒 Groceries': { icon: '🛒', bg: 'bg-green-50 dark:bg-green-950/30' },
+  '💰 Salary': { icon: '💰', bg: 'bg-amber-50 dark:bg-amber-950/30' },
+  '🚕 Transport': { icon: '🚕', bg: 'bg-yellow-50 dark:bg-yellow-950/30' },
+  '🎬 Entertainment': { icon: '🎬', bg: 'bg-purple-50 dark:bg-purple-950/30' },
+  '💼 Freelance': { icon: '💼', bg: 'bg-blue-50 dark:bg-blue-950/30' },
+  '🍽️ Food': { icon: '🍽️', bg: 'bg-orange-50 dark:bg-orange-950/30' },
+  '💱 Exchange': { icon: '💱', bg: 'bg-cyan-50 dark:bg-cyan-950/30' },
+  '✈️ Travel': { icon: '✈️', bg: 'bg-sky-50 dark:bg-sky-950/30' },
+  '☕ Coffee': { icon: '☕', bg: 'bg-amber-50 dark:bg-amber-950/30' },
+  '🏋️ Health': { icon: '🏋️', bg: 'bg-rose-50 dark:bg-rose-950/30' },
 };
 
 const categoryLabel = (cat: string) => cat.replace(/^[^\s]+\s/, '');
@@ -26,23 +26,23 @@ const TransactionItem = ({ transaction, index }: TransactionItemProps) => {
     maximumFractionDigits: 2,
   }).format(Math.abs(transaction.amount));
   const symbol = transaction.currency === 'EUR' ? '€' : '$';
-  const icon = categoryIcon[transaction.category] || '📦';
+  const config = categoryConfig[transaction.category] || { icon: '📦', bg: 'bg-muted' };
 
   const amountClass =
     transaction.type === 'income'
-      ? 'amount-income'
+      ? 'text-income'
       : transaction.type === 'exchange'
-        ? 'amount-exchange'
+        ? 'text-exchange'
         : 'text-foreground';
 
   return (
     <div
-      className="flex items-center gap-3 py-3 animate-fade-in"
+      className="flex items-center gap-3 py-3.5 animate-fade-in"
       style={{ animationDelay: `${index * 30}ms`, animationFillMode: 'backwards' }}
     >
       {/* Category avatar */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-lg">
-        {icon}
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg ${config.bg}`}>
+        {config.icon}
       </div>
 
       {/* Info */}
